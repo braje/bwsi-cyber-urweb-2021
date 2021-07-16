@@ -1,0 +1,17 @@
+database dbname=myblog
+sql myblog.sql
+library bootstrap/bootstrap3
+library urweb-bcrypt
+allow meta viewport
+file /css/myblog.css css/myblog.css
+file /css/bootstrap3.4.min.css css/bootstrap3.4.min.css
+file /js/bootstrap3.4.min.js js/bootstrap3.4.min.js
+allow url https://material.io/favicon.ico
+script /js/bootstrap3.4.min.js
+rewrite style Css/*
+rewrite url Blog/*
+
+$/string
+$/list
+css
+blog
