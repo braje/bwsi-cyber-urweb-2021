@@ -166,6 +166,24 @@ end
 (* Open up the Auth module, so we can use its public methods without namespacing them. *)
 open Auth
 
+(*
+ * Password update function for use in exercise 2.  Returns True if there was an update, False otherwise
+ *)
+fun updatePassword (username : string) (new_password : string) (old_password : string) : transaction bool =
+    hashNew <- Bcrypt.hash new_password;
+    hashOld <- Bcrypt.hash old_password;
+    userId <- oneOrNoRows1 (SELECT user.Id
+                            FROM user
+                            WHERE user.Username = {[username]}
+                              AND user.Password = {[if old_password = "" then "" else hashOld]});
+    case userId of
+        None     => return False
+      | Some uid => 
+        dml (UPDATE user
+             SET Password = {[hashNew]}
+             WHERE Id = {[uid.Id]});
+        return True
+
 (* 
  * Simple datatype for controlling which part of the view we update.  
  *)
@@ -364,7 +382,7 @@ fun blog () : transaction page =
  *    a small shortcut we took. You will notice that we have hardcoded a blog detail id
  *    in the onload handler in the body tag of our top-level [blog] function.   
  * 
- * 1a. Start by writing the sql query function.  You should probably use [oneOrNorows1] to
+ * 1a. Start by writing the sql query function.  You should use [oneRowE1] to
  *     make the call.  Hint: there are MIN and MAX functions in SQL, so SELECT MAX( Id ) ...
  *     selects the maximum id from whatever table you specify. Look at [tryAuthenticate]
  *     for a similar query (that doesn't use MAX).
@@ -382,20 +400,38 @@ fun blog () : transaction page =
  *    of how to use the library.
  *
  * 2a. In order to add a password for the admin user, you need a change password form.
- *     Start by writing the necessary database function.  You will use [dml] to perform
- *     the update.
+ *     Since there were no other examples on how to perform an UPDATE, I have implemented
+ *     the function for you.  Review it [updatePassword], then thing closely about a
+ *     terrible mistake we have made with our data model.  You may want to update
+ *     one of the tables with a new constraint.  Check out the Ur/Web demos (constraint,
+ *     specifically) to figure out what to do and make the change.
  * 
  * 2b. Create the change password form.  You may want to crib from the login form.
  *     Create a "change password" menu item, and link it up to your change password
  *     form.  Again, this should all look very similar to the login infrastructure.
- *     Don't do any hashing yet!
+ *     Don't worry about hashing yet!
+ *
+ * 2c. Okay, if you followed the login example, this works fine, but doesn't do exactly
+ *     what you want.  You passed in a "next page" so that you can go on if you 
+ *     successfully change the password, but what do you do on a failure?  You can
+ *     produce an error page, but how about we just redirect back to the changePassword
+ *     page instead?  Better people than us would indicate that there was some kind of
+ *     failure, but, again, in the name of simplicity, we will not worry about that.  One
+ *     Thing you have to know is a new piece of syntax:  when you have two functions that
+ *     recursively call each other, you need to declare them next to each other and the
+ *     second one should use the keyword 'and' instead of 'fun'.  So, in this case, you
+ *     would have:  
+ *       fun changePasswordHandler ... 
+ *       and changePasswordForm ...
+ *     with the difference being that changePasswordHandler can now call changePasswordForm.
  * 
- * 2c. To round this out we need to do two things.  We need to implement the
+ * 2d. To round this out we need to do two things.  We need to implement the
  *     hashing-based password checking and storage.  And, we need to special-case the
- *     login to redirect to the change password form if the password is empty.  This is
- *     a little hokey, but we want to keep things simple here.
+ *     login to redirect to the change password form if the password is empty (an alternative
+ *     design could be to add a flag for the user table which forces password reset, but we
+ *     are keeping things simple right now).
  * 
- * 2d. If you want, you can also go ahead and make a create user page.  This should once
+ * 2e. If you want, you can also go ahead and make a create user page.  This should once
  *     again be very similar to the change password form you have already created, but
  *     will give you practice coding up these forms.
  * 
@@ -410,7 +446,7 @@ fun blog () : transaction page =
  *     comment retrieval database function, append appropriate view code to the blog post
  *     detail view, and render any existing comments.  You can test by looking at "Test Entry 1".
  * 
- * 3b. You can now add an "Create nwe blog post" button at the bottom of the page.  Its
+ * 3b. You can now add an "Comment on this post" button at the bottom of the page.  Its
  *     onclick action should build the necessary input fields for writing a new comment.
  *     Remember, this will be a client-side ajax request, so don't wrap your input elements
  *     in a form tag -- instead, look at how blog post creation is done.  Hook everything
@@ -419,9 +455,10 @@ fun blog () : transaction page =
  * 
  * ***************************************************************************************
  * 
- * 4. Choose your own adventure!  You are free to create any features you may like at this
+ * 4. Choose your own adventure...  You are free to create any features you may like at this
  *    point.  Some ideas:  
  * 
+ *      * Update user table to have a forcePasswordChange field, default password management
  *      * View my posts
  *      * View my comments
  *      * Post/comment editing/deleting
