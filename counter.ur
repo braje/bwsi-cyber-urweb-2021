@@ -21,7 +21,7 @@ fun renderCounterPage n : transaction page =
     clientCounter <- source n;
     return
         <xml><body>
-          <!-- This section of the web page is updated by following links
+          (* This section of the web page is updated by following links
                which make a request back to the server and re-render the
                page in its entirety.
 
@@ -30,19 +30,19 @@ fun renderCounterPage n : transaction page =
                within them.  In the case below, we also have opened up square
                brackets [] which simply take a bare Ur value and convert it
                to xml, so {[n]} converts the Ur int to an xml string.
-          -->
+          *)
           <h1>This counter goes server side for update</h1>
           Current server-side counter: {[n]}<br/>
           <div><a link={renderCounterPage (n + 1)}>Server Inc</a></div>
           <div><a link={renderCounterPage (n - 1)}>Server Dec</a></div>
-          <!-- Here, counter updates are handled via javascript calls which never leave the page.
-               This means that we can make local changes to the DOM. -->
+          (* Here, counter updates are handled via javascript calls which never leave the page.
+               This means that we can make local changes to the DOM. *)
           <h1>This counter updates locally</h1>
           <div>Current client side value:
-            <!-- dyn is a "pseudo-tag" which marks a place where updates will happen based off of a signal.
+            (* dyn is a "pseudo-tag" which marks a place where updates will happen based off of a signal.
                  Signals are attached to sources and when the source value is updated, the signal is triggered,
                  re-rendering the DOM at the location of the dyn tag with whatever xml contents are produced
-                 by the function registered with the signal. -->
+                 by the function registered with the signal. *)
             <dyn signal={n <- signal clientCounter; return <xml>{[n]}</xml>} />
             <div>
               <button onclick={fn _ => updateSource clientCounter (fn i => i + 1)}>Inc</button>
